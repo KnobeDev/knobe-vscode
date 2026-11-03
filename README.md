@@ -35,6 +35,7 @@ The verdicts come from `knobe-core.js`, the KNOBE Protocol v1 JavaScript engine,
 - The extension verifies the **saved bytes on disk**, not the editor buffer, because VS Code can normalize line endings in a buffer. For a document with no readable file behind it (for example, one side of a git diff), it falls back to the editor text and says so in the tooltip and details.
 - Each verification runs in a worker thread with a time limit, so a huge or hostile file cannot stall the editor or other extensions.
 - Files above a size limit are not verified automatically. The status bar shows `KNOBE: large file, click to verify` instead, and **Verify KNOBE** always runs.
+- Nothing is ever read above 256 MB, even on request: such a file shows `KNOBE: file too large to verify`. Each worker also has a memory ceiling, so a hostile file can only crash its own worker, which is reported as an error.
 - A newer edit, save, or close cancels any verification still running for that file and stops its worker.
 - In an untrusted workspace, the size-limit and timeout settings are taken only from your user settings, so a repository's `.vscode/settings.json` cannot lift them. Both also have hard maximums (256 MB and 300 seconds).
 

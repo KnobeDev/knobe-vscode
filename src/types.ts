@@ -45,5 +45,7 @@ export type DocStatus =
   /** Auto-verify is off; nothing has been verified since the last save. */
   | { kind: "manual" }
   | { kind: "skipped-size"; size: number; limit: number }
+  /** Above HARD_MAX_BYTES: never read, even on request. */
+  | { kind: "too-large"; size: number; limit: number }
   | { kind: "timeout"; ms: number }
   | { kind: "error"; message: string };

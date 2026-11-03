@@ -107,7 +107,7 @@ test("skipped-size explains the setting", () => {
 test("label in name: every accessible label starts with the visible text (SC 2.5.3)", () => {
   const statuses = [
     { kind: "pending" }, { kind: "stale" }, { kind: "manual" }, { kind: "timeout", ms: 1000 },
-    { kind: "error", message: "x" }, { kind: "skipped-size", size: 10, limit: 1 },
+    { kind: "error", message: "x" }, { kind: "skipped-size", size: 10, limit: 1 }, { kind: "too-large", size: 300 * 1024 * 1024, limit: 256 * 1024 * 1024 },
     ...["verified", "verified-body-modified", "failed", "unreadable"].map((state) => done(verdict({ state }))),
   ];
   for (const s of statuses) {
@@ -132,4 +132,12 @@ test("manual status (autoVerify off) shows no verdict and offers to verify", () 
   const s = { kind: "manual" };
   assert.equal(P.statusBarText(s), "$(info) KNOBE: not verified, click to verify");
   assert.ok(P.tooltipText(s).includes("knobeVerify.autoVerify"));
+});
+
+test("too-large status: no verdict, names the cap, points to a CLI verifier", () => {
+  const s = { kind: "too-large", size: 300 * 1024 * 1024, limit: 256 * 1024 * 1024 };
+  assert.equal(P.statusBarText(s), "$(circle-slash) KNOBE: file too large to verify");
+  assert.equal(P.severity(s), "none");
+  const t = P.tooltipText(s);
+  assert.ok(t.includes("300.0 MB") && t.includes("256.0 MB") && t.includes("lens.py"));
 });

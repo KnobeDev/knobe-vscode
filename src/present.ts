@@ -57,6 +57,7 @@ export function visibleText(status: DocStatus): string {
     case "stale": return "KNOBE: unsaved edits, no verdict";
     case "manual": return "KNOBE: not verified, click to verify";
     case "skipped-size": return "KNOBE: large file, click to verify";
+    case "too-large": return "KNOBE: file too large to verify";
     case "timeout": return "KNOBE: verification timed out";
     case "error": return "KNOBE: could not verify";
     case "verified": {
@@ -72,6 +73,7 @@ const KIND_ICON: Record<DocStatus["kind"], string> = {
   "stale": "$(circle-slash)",
   "manual": "$(info)",
   "skipped-size": "$(info)",
+  "too-large": "$(circle-slash)",
   "timeout": "$(watch)",
   "error": "$(error)",
   "verified": "$(question)",
@@ -102,6 +104,7 @@ export function accessibleLabel(status: DocStatus): string {
     case "stale": return `${shown}. The file has unsaved edits, so no verdict is shown. Save to verify.`;
     case "manual": return `${shown}. Automatic verification is off. Activate to verify the saved file.`;
     case "skipped-size": return `${shown}. The file is larger than the automatic verification limit. Activate to verify now.`;
+    case "too-large": return `${shown}. It is larger than this extension's maximum, so it was not read. Activate for details.`;
     case "timeout": return `${shown}. Activate for details.`;
     case "error": return `${shown}. Activate for details.`;
     case "verified": {
@@ -164,6 +167,10 @@ export function tooltipText(status: DocStatus): string {
       return `This file is ${formatBytes(status.size)}, above the auto-verify limit of `
         + `${formatBytes(status.limit)} (setting: knobeVerify.autoVerifyMaxSizeKB). `
         + "Click to run Verify KNOBE now.";
+    case "too-large":
+      return `This file is ${formatBytes(status.size)}, above the ${formatBytes(status.limit)} maximum `
+        + "this extension will read into memory, so it was not verified. "
+        + "Use a command-line verifier such as lens.py for files this large.";
     case "timeout":
       return `Verification did not finish within ${Math.round(status.ms / 1000)} s and was stopped `
         + "(setting: knobeVerify.timeoutSeconds). No verdict.";

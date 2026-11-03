@@ -3,6 +3,7 @@
 
 import { Worker } from "node:worker_threads";
 import * as path from "node:path";
+import { WORKER_MAX_HEAP_MB } from "./limits";
 import type { Outcome, WorkerResponse } from "./types";
 
 const WORKER_PATH = path.join(__dirname, "verifyWorker.js");
@@ -16,7 +17,7 @@ export function verifyInWorker(bytes: Uint8Array, timeoutMs: number, signal?: Ab
       return;
     }
     let settled = false;
-    const worker = new Worker(WORKER_PATH);
+    const worker = new Worker(WORKER_PATH, { resourceLimits: { maxOldGenerationSizeMb: WORKER_MAX_HEAP_MB } });
     const onAbort = () => finish({ kind: "cancelled" });
     signal?.addEventListener("abort", onAbort, { once: true });
     const finish = (outcome: Outcome) => {

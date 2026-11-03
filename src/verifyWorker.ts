@@ -10,6 +10,7 @@
 import { parentPort } from "node:worker_threads";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
+import { truncateDisplay } from "./limits";
 import type { Verdict, WorkerRequest, WorkerResponse } from "./types";
 
 type Engine = {
@@ -30,18 +31,20 @@ const ISSUE_LIMIT = 500;
 const MAX_ISSUES = 50;
 
 function toVerdict(engine: Engine, r: Record<string, unknown>): Verdict {
-  const str = (v: unknown, limit = 300): string | null =>
-    typeof v === "string" ? engine.safe(v, limit) : null;
+  // Escape in full with the engine's safe(), then truncate here: safe()'s own
+  // limit can cut through an escape sequence it just inserted.
+  const esc = (v: string, limit: number) => truncateDisplay(engine.safe(v, Number.MAX_SAFE_INTEGER), limit);
+  const str = (v: unknown, limit = 300): string | null => (typeof v === "string" ? esc(v, limit) : null);
   const list = (v: unknown, limit: number): string[] =>
-    Array.isArray(v) ? v.slice(0, MAX_ISSUES).map((x) => engine.safe(String(x), limit)) : [];
+    Array.isArray(v) ? v.slice(0, MAX_ISSUES).map((x) => esc(String(x), limit)) : [];
   const payload = r.payload && typeof r.payload === "object"
     ? (r.payload as Record<string, unknown>)
     : null;
   const issues = Array.isArray(r.conformance_issues) ? r.conformance_issues : [];
 
   return {
-    state: engine.safe(String(r.state)),
-    conformance: engine.safe(String(r.conformance)),
+    state: esc(String(r.state), 100),
+    conformance: esc(String(r.conformance), 100),
     conformanceIssues: list(issues, ISSUE_LIMIT),
     conformanceIssuesTruncated: issues.length > MAX_ISSUES,
     // The engine reports null for unreadable files; spec §7 mandates

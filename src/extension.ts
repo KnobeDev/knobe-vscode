@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { verifyInWorker } from "./engine";
+import { HARD_MAX_BYTES, sizeDecision } from "./limits";
 import {
   accessibleLabel, detailsText, escapeControls, problemAnnouncement, severity, statusBarText, tooltipText,
 } from "./present";
@@ -129,7 +130,12 @@ export function activate(context: vscode.ExtensionContext): KnobeVerifyApi {
     const { maxBytes, timeoutMs } = config();
     const size = await sizeOf(doc);
     if (generation.get(k) !== gen) return;
-    if (!explicit && size > maxBytes) {
+    const decision = sizeDecision(size, explicit, maxBytes);
+    if (decision === "refuse") {
+      setStatus(doc.uri, { kind: "too-large", size, limit: HARD_MAX_BYTES });
+      return;
+    }
+    if (decision === "skip") {
       setStatus(doc.uri, { kind: "skipped-size", size, limit: maxBytes });
       return;
     }
