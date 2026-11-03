@@ -1,0 +1,17 @@
+---
+spec_version: "1.0"
+title: "Impossible date"
+---
+Body.
+
+-----BEGIN KNOBE B64-----
+eyJzcGVjX3ZlcnNpb24iOiAiMS4wIiwgInRpdGxlIjogIkltcG9zc2libGUgZGF0
+ZSIsICJzdW1tYXJ5IjogIkEgY3JhZnRlZCBmaWxlIHVzZWQgdG8gZXhlcmNpc2Ug
+bGVucy5weSBoYXJkZW5pbmcuIiwgImNvbnRlbnRfdHlwZSI6ICJvcmlnaW5hbCIs
+ICJjcmVhdGVkX2RhdGUiOiAiMjAyNi05OS05OSIsICJsaWNlbnNlIjogIkNDIEJZ
+IDQuMCIsICJwcml2YWN5X2xldmVsIjogInB1YmxpYyIsICJxdWFyYW50aW5lX3N0
+YXR1cyI6ICJ0cnVzdGVkIiwgImF0dHJpYnV0aW9uIjogeyJzb3VyY2VzIjogWyJL
+Tk9CRSBoYXJkZW5pbmcgdGVzdCBzZXQiXX0sICJwYXlsb2FkX2hhc2giOiAiNjE3
+MTkwODYyODY2MmU4ZDlhZWM3ZjNmZDhmMTc4N2U3ZjUzYmRhNWJiMzJhYmZhZGY1
+YzllNWYwM2U1NjM4NyJ9
+-----END KNOBE B64-----

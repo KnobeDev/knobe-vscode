@@ -1,0 +1,16 @@
+KNOBE Verify for VS Code
+Copyright 2026 Joshua Hori
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This is an independent editor integration built on KNOBE. It is not the
+KNOBE Protocol steward's official or reference implementation, and the
+steward did not build, endorse, or review it.
+
+vendor/knobe-core.js
+  KNOBE Protocol v1 engine, from https://github.com/KnobeOne/knobe-protocol
+  Apache License 2.0 (full text: vendor/LICENSE-knobe-core.txt).
+  Vendored unmodified; header comment intact. See vendor/VENDORED.md.
+
+test/fixtures/vectors/
+  KNOBE Protocol v1 test vectors, CC0-1.0 (test/fixtures/vectors/LICENSE).
+  Test-only; not included in the packaged extension.

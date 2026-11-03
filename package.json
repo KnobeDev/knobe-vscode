@@ -1,0 +1,126 @@
+{
+  "name": "knobe-verify-vscode",
+  "displayName": "KNOBE Verify for VS Code",
+  "description": "Read-only, offline verification of .knobe.md files on open and save. Built on KNOBE; verdicts come from the vendored knobe-core.js engine.",
+  "version": "0.1.0",
+  "preview": true,
+  "publisher": "KnobeDev",
+  "author": {
+    "name": "Joshua Hori"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KnobeDev/knobe-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/KnobeDev/knobe-vscode/issues"
+  },
+  "keywords": [
+    "knobe",
+    "knobe.md",
+    "verify",
+    "integrity",
+    "provenance"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "workspaceContains:**/*.knobe.md",
+    "onLanguage:markdown"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Verification is read-only and runs no workspace code. In an untrusted workspace, the size-limit and timeout settings come only from your user settings, not the workspace.",
+      "restrictedConfigurations": [
+        "knobeVerify.autoVerifyMaxSizeKB",
+        "knobeVerify.timeoutSeconds"
+      ]
+    },
+    "virtualWorkspaces": true
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "knobeVerify.verify",
+        "title": "Verify KNOBE",
+        "category": "KNOBE Verify"
+      },
+      {
+        "command": "knobeVerify.showDetails",
+        "title": "Show KNOBE Verification Details",
+        "category": "KNOBE Verify"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "knobeVerify.verify",
+          "when": "resourceFilename =~ /\\.knobe\\.md$/i",
+          "group": "navigation@90"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "KNOBE Verify",
+      "properties": {
+        "knobeVerify.autoVerify": {
+          "type": "boolean",
+          "default": true,
+          "description": "Verify *.knobe.md files automatically when they are opened or saved. When off, use the Verify KNOBE command."
+        },
+        "knobeVerify.autoVerifyMaxSizeKB": {
+          "type": "number",
+          "default": 5120,
+          "minimum": 0,
+          "description": "Files larger than this (in KB) are not verified automatically. The status bar offers a click-to-verify instead, and the Verify KNOBE command always runs. Capped at 262144 (256 MB).",
+          "maximum": 262144
+        },
+        "knobeVerify.timeoutSeconds": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "description": "Stop a verification that has not finished after this many seconds. It runs in a worker thread, so the editor stays responsive either way.",
+          "maximum": 300
+        },
+        "knobeVerify.announceProblems": {
+          "type": "string",
+          "enum": [
+            "errors",
+            "all",
+            "off"
+          ],
+          "default": "errors",
+          "enumDescriptions": [
+            "Show a notification when the active file's result is failed or unreadable, or verification could not run.",
+            "Also notify for verified-body-modified and for warnings or invalid conformance.",
+            "Never notify; the status bar still shows every result."
+          ],
+          "description": "Announce verdicts that need attention with a notification, so they reach screen reader users and anyone not watching the status bar. Each distinct result is announced once."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p .",
+    "watch": "tsc -w -p .",
+    "test:unit": "npm run compile && node --test \"test/unit/*.test.mjs\"",
+    "test:integration": "npm run compile && node test/integration/run.mjs",
+    "test": "npm run test:unit && npm run test:integration",
+    "package": "vsce package --no-dependencies",
+    "test:offline": "npm run compile && unshare -rn node test/integration/run.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "~1.90.0",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.6.0"
+  }
+}

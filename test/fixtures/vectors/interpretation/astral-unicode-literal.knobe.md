@@ -1,0 +1,21 @@
+---
+title: "Astral Unicode Literal"
+spec_version: "1.0"
+---
+
+# Astral Unicode Literal
+
+The sealed payload contains characters above U+FFFF. Canonical serialization writes them as literal UTF-8 bytes; only control characters use escape sequences. Expected status: verified, conformance: valid.
+
+-----BEGIN KNOBE B64-----
+eyJhdHRyaWJ1dGlvbiI6eyJzb3VyY2VzIjpbeyJhdXRob3IiOiJEYXZpZCBLeWxlIiwiY29udHJp
+YnV0aW9uIjoiVGVzdCB2ZWN0b3IgYXV0aG9yIn1dfSwiY29udGVudF90eXBlIjoib3JpZ2luYWwi
+LCJjcmVhdGVkX2RhdGUiOiIyMDI2LTA3LTA4IiwibGljZW5zZSI6IkNDMCAxLjAiLCJwcml2YWN5
+X2xldmVsIjoicHVibGljIiwicXVhcmFudGluZV9zdGF0dXMiOiJxdWFyYW50aW5lIiwic3BlY192
+ZXJzaW9uIjoiMS4wIiwic3VtbWFyeSI6IlBpbnMgdGhhdCBjb2RlIHBvaW50cyBhYm92ZSBVK0ZG
+RkYgc2VyaWFsaXplIGFzIGxpdGVyYWwgVVRGLTggaW4gdGhlIGNhbm9uaWNhbCBmb3JtLCBuZXZl
+ciBhcyBlc2NhcGUgcGFpcnMuIiwidGl0bGUiOiJBc3RyYWwgVW5pY29kZSBMaXRlcmFsIiwicHJv
+YmU6ZW1vamlfbm90ZSI6InNlcXVvaWEg8J+MsiBhbmQgYmxhY2tib2FyZCDwnZWKIHN0YXkgbGl0
+ZXJhbCBVVEYtOCIsInBheWxvYWRfaGFzaCI6IjE1YjVkODI0MTgxODI1MmEwMGUwMjQ5NWMxNDQy
+NDJiNjJhMTZhYjIwMzJkZWUwNzgwYjY3ZjRiOGE2NWYwN2EifQ==
+-----END KNOBE B64-----

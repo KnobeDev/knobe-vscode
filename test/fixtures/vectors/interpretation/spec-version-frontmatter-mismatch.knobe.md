@@ -1,0 +1,20 @@
+---
+title: "Frontmatter Version Mismatch"
+spec_version: "1.1"
+---
+
+# Frontmatter Version Mismatch
+
+The YAML frontmatter declares spec_version 1.1 while the sealed payload declares 1.0. The sealed value is authoritative; the disagreement is a soft deviation. Expected status: verified, conformance: warnings.
+
+-----BEGIN KNOBE B64-----
+eyJhdHRyaWJ1dGlvbiI6eyJzb3VyY2VzIjpbeyJhdXRob3IiOiJEYXZpZCBLeWxlIiwiY29udHJp
+YnV0aW9uIjoiVGVzdCB2ZWN0b3IgYXV0aG9yIn1dfSwiY29udGVudF90eXBlIjoib3JpZ2luYWwi
+LCJjcmVhdGVkX2RhdGUiOiIyMDI2LTA3LTA4IiwibGljZW5zZSI6IkNDMCAxLjAiLCJwcml2YWN5
+X2xldmVsIjoicHVibGljIiwicXVhcmFudGluZV9zdGF0dXMiOiJxdWFyYW50aW5lIiwic3BlY192
+ZXJzaW9uIjoiMS4wIiwic3VtbWFyeSI6IlBpbnMgdGhlIHJ1bGluZyB0aGF0IGEgZnJvbnRtYXR0
+ZXIgYW5kIHBheWxvYWQgc3BlY192ZXJzaW9uIGRpc2FncmVlbWVudCBpcyBhIHdhcm5pbmcsIHdp
+dGggdGhlIHNlYWxlZCB2YWx1ZSBhdXRob3JpdGF0aXZlLiIsInRpdGxlIjoiRnJvbnRtYXR0ZXIg
+VmVyc2lvbiBNaXNtYXRjaCIsInBheWxvYWRfaGFzaCI6IjE0YjI0MTcxNzE2NzMxYzRmMDQ3M2Ji
+YTAxOTg0N2Y1ZmM5NWIwN2U4OGY5M2YxYTYyMGVkZWVhNDU3MmMyZWMifQ==
+-----END KNOBE B64-----

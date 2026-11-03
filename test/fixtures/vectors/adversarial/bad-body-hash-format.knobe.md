@@ -1,0 +1,18 @@
+---
+spec_version: "1.0"
+title: "Bad body_hash format"
+---
+Body line one.
+Body line two.
+
+-----BEGIN KNOBE B64-----
+eyJzcGVjX3ZlcnNpb24iOiAiMS4wIiwgInRpdGxlIjogIkJhZCBib2R5X2hhc2gg
+Zm9ybWF0IiwgInN1bW1hcnkiOiAiQSBjcmFmdGVkIGZpbGUgdXNlZCB0byBleGVy
+Y2lzZSBsZW5zLnB5IGhhcmRlbmluZy4iLCAiY29udGVudF90eXBlIjogIm9yaWdp
+bmFsIiwgImNyZWF0ZWRfZGF0ZSI6ICIyMDI2LTA2LTI2IiwgImxpY2Vuc2UiOiAi
+Q0MgQlkgNC4wIiwgInByaXZhY3lfbGV2ZWwiOiAicHVibGljIiwgInF1YXJhbnRp
+bmVfc3RhdHVzIjogInRydXN0ZWQiLCAiYXR0cmlidXRpb24iOiB7InNvdXJjZXMi
+OiBbIktOT0JFIGhhcmRlbmluZyB0ZXN0IHNldCJdfSwgImJvZHlfaGFzaCI6ICJu
+b3RoZXgiLCAicGF5bG9hZF9oYXNoIjogIjhlMjVhNDI1NDM3ZTkyZDZlNmM1NDRl
+ZGRiMWRiMDJlNjRjNzllMzIzNjc4M2RkMDEyZDA2ZTFjMTJhOGFhNGMifQ==
+-----END KNOBE B64-----
