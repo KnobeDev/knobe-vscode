@@ -30,6 +30,12 @@ test("escapeControls escapes C0, DEL, C1, bidi and separators; keeps normal text
   assert.equal(P.escapeControls("café 中文 עברית 😀"), "café 中文 עברית 😀");
 });
 
+test("escapeControls shows an unpaired surrogate as \\udXXX and keeps a pair", () => {
+  const lone = String.fromCharCode(0xd800);
+  assert.equal(P.escapeControls("a" + lone + "b" + String.fromCharCode(0xdc00)), "a\\ud800b\\udc00");
+  assert.equal(P.escapeControls(cp(0x1f600)), cp(0x1f600));
+});
+
 test("escapeControls is idempotent on engine-escaped strings", () => {
   const once = P.escapeControls("t\x1b\n");
   assert.equal(P.escapeControls(once), once);

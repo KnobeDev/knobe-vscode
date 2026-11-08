@@ -14,16 +14,20 @@ import type { DocStatus, Source, Verdict } from "./types";
 
 export const CAVEAT = "A match proves integrity, not truth. Inspect before trusting.";
 
-/** Escape C0/C1 controls, DEL, bidi format controls, and line/paragraph
- * separators. Mirrors the character classes of knobe-core.js safe(), so
- * re-escaping an already-safe string is a no-op. */
+/** Escape C0/C1 controls, DEL, bidi format controls, line/paragraph
+ * separators, and unpaired surrogates (which have no UTF-8 form). Same
+ * classes and spellings as knobe-core.js safe() at 8d664d3, so re-escaping
+ * engine output is a no-op. Kept here, not delegated to the engine, so text
+ * that never went through the worker (file names, worker errors) is escaped
+ * too. */
 export function escapeControls(s: string): string {
   let out = "";
   for (const ch of s) {
     const o = ch.codePointAt(0)!;
     if (o < 0x20 || o === 0x7f || (o >= 0x80 && o <= 0x9f)) {
       out += "\\x" + o.toString(16).padStart(2, "0");
-    } else if ((o >= 0x202a && o <= 0x202e) || (o >= 0x2066 && o <= 0x2069) || o === 0x2028 || o === 0x2029) {
+    } else if ((o >= 0x202a && o <= 0x202e) || (o >= 0x2066 && o <= 0x2069) || o === 0x2028 || o === 0x2029
+               || (o >= 0xd800 && o <= 0xdfff)) {
       out += "\\u" + o.toString(16).padStart(4, "0");
     } else {
       out += ch;

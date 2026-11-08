@@ -16,6 +16,7 @@ import type { Verdict, WorkerRequest, WorkerResponse } from "./types";
 type Engine = {
   verify(input: Uint8Array): Promise<Record<string, unknown>>;
   safe(value: unknown, limit?: number): string;
+  canonicalize(value: unknown): string;
 };
 
 const ENGINE_URL = pathToFileURL(path.join(__dirname, "..", "vendor", "knobe-core.js")).href;
@@ -28,12 +29,50 @@ function loadEngine(): Promise<Engine> {
 
 const TITLE_LIMIT = 200;
 const ISSUE_LIMIT = 500;
+const HASH_LIMIT = 100;
 const MAX_ISSUES = 50;
+
+/** JSON text of a parsed payload value as the engine's canonicalize() writes
+ * it (keys sorted, every digit of a large integer kept). safe() would write
+ * an integer beyond 2^53 inside an object as a quoted string. */
+function jsonText(engine: Engine, value: unknown): string | null {
+  try {
+    return engine.canonicalize(value);
+  } catch {
+    return null;
+  }
+}
+
+/** What a non-string value is, in plain words, from its JSON text. */
+function jsonKind(json: string): string {
+  if (json === "null") return "null";
+  if (json === "true" || json === "false") return "a true/false value";
+  if (json.startsWith("[")) return "a list";
+  if (json.startsWith("{")) return "a group of fields";
+  return "a number";
+}
+
+type Esc = (v: string, limit: number) => string;
+
+/** The stored payload_hash as shown, or null for "(none)". The engine passes
+ * the payload's payload_hash through as is ("" when it is absent), so on a
+ * readable file it may be any JSON value, including null (knobe-core.js
+ * 8d664d3, as lens.py). Show a non-string for what it is, "12345 (expected a
+ * hash, got a number)", never as "(none)". An unreadable report always
+ * carries null: nothing was read, so there is nothing to show. */
+function storedText(engine: Engine, esc: Esc, r: Record<string, unknown>): string | null {
+  if (r.state === "unreadable" || r.stored === undefined) return null;
+  if (typeof r.stored === "string") return esc(r.stored, HASH_LIMIT);
+  const json = jsonText(engine, r.stored);
+  return json === null
+    ? "(a value that cannot be shown)"
+    : `${esc(json, HASH_LIMIT)} (expected a hash, got ${jsonKind(json)})`;
+}
 
 function toVerdict(engine: Engine, r: Record<string, unknown>): Verdict {
   // Escape in full with the engine's safe(), then truncate here: safe()'s own
   // limit can cut through an escape sequence it just inserted.
-  const esc = (v: string, limit: number) => truncateDisplay(engine.safe(v, Number.MAX_SAFE_INTEGER), limit);
+  const esc: Esc = (v, limit) => truncateDisplay(engine.safe(v, Number.MAX_SAFE_INTEGER), limit);
   const str = (v: unknown, limit = 300): string | null => (typeof v === "string" ? esc(v, limit) : null);
   const list = (v: unknown, limit: number): string[] =>
     Array.isArray(v) ? v.slice(0, MAX_ISSUES).map((x) => esc(String(x), limit)) : [];
@@ -51,7 +90,7 @@ function toVerdict(engine: Engine, r: Record<string, unknown>): Verdict {
     // "omitted" there, and E11 allows either spelling. Show "omitted".
     bodyVerified: str(r.body_verified) ?? "omitted",
     computed: str(r.computed, 64),
-    stored: str(r.stored, 100),
+    stored: storedText(engine, esc, r),
     missing: list(r.missing, 100),
     blockCount: typeof r.block_count === "number" ? r.block_count : 0,
     reason: str(r.reason, ISSUE_LIMIT),

@@ -38,48 +38,32 @@ async function waitFor(pred, ms = 5000) {
   assert.fail("timed out waiting for condition");
 }
 
-// Inlined so this file stays CJS; mirrors test/unit/expected.mjs.
-const EXPECTED = {
-  "minimal-valid.knobe.md": ["verified", null, "valid"],
-  "full-valid.knobe.md": ["verified", null, "valid"],
-  "body-modified.knobe.md": ["verified-body-modified", "modified", "valid"],
-  "payload-modified.knobe.md": ["failed", null, "valid"],
-  "unreadable.knobe.md": ["unreadable", "omitted", "invalid"],
-  "unicode-valid.knobe.md": ["verified", null, "valid"],
-  "numeric-violation.knobe.md": ["verified", null, "invalid"],
-  "omitted-body-hash.knobe.md": ["verified", "omitted", "valid"],
-  "multi-block.knobe.md": ["verified", "omitted", "warnings"],
-  "adversarial/bad-attribution-sources-type.knobe.md": ["verified", "omitted", "invalid"],
-  "adversarial/bad-body-hash-format.knobe.md": ["verified-body-modified", "modified", "invalid"],
-  "adversarial/bad-created-date.knobe.md": ["verified", "omitted", "invalid"],
-  "adversarial/control-character-title.knobe.md": ["verified", "omitted", "valid"],
-  "adversarial/duplicate-key.knobe.md": ["unreadable", "omitted", "invalid"],
-  "adversarial/multi-block-warning.knobe.md": ["verified", "omitted", "warnings"],
-  "adversarial/nfc-key-collision.knobe.md": ["unreadable", "omitted", "invalid"],
-  "adversarial/no-frontmatter-valid-payload.knobe.md": ["verified", "omitted", "invalid"],
-  "adversarial/payload-array.knobe.md": ["unreadable", "omitted", "invalid"],
-  "adversarial/unsupported-spec-version.knobe.md": ["unreadable", "omitted", "invalid"],
-  "interpretation/boolean-null-values.knobe.md": ["verified", "omitted", "valid"],
-  "interpretation/spec-version-frontmatter-mismatch.knobe.md": ["verified", "omitted", "warnings"],
-  "interpretation/begin-marker-mid-line.knobe.md": ["verified", "yes", "valid"],
-  "interpretation/base64-unpadded.knobe.md": ["unreadable", "omitted", "invalid"],
-  "interpretation/attribution-missing.knobe.md": ["verified", "omitted", "invalid"],
-  "interpretation/astral-unicode-literal.knobe.md": ["verified", "omitted", "valid"],
-};
+// Expected results from the upstream README tables bundled with the vectors,
+// the same source the unit tests read.
+const { expectations } = require(path.join(__dirname, "..", "..", "vector-expectations.cjs"));
+const ROWS = expectations();
 
-for (const [rel, [state, body, conformance]] of Object.entries(EXPECTED)) {
-  test(`opening ${rel} shows ${state} / ${conformance}`, async () => {
-    const { a, status } = await open(`vectors/${rel}`);
+test("the suite covers every bundled vector", async () => {
+  const onDisk = (await vscode.workspace.findFiles("vectors/**/*.knobe.md"))
+    .map((u) => path.relative(path.join(WS, "vectors"), u.fsPath).split(path.sep).join("/")).sort();
+  assert.deepEqual(ROWS.map((r) => r.file).sort(), onDisk);
+});
+
+for (const { file, state, bodyVerified, conformance } of ROWS) {
+  test(`opening ${file} shows ${state} / ${bodyVerified} / ${conformance}`, async () => {
+    const { a, status } = await open(`vectors/${file}`);
     assert.equal(status.kind, "verified", JSON.stringify(status));
     assert.equal(status.verdict.state, state);
+    assert.equal(status.verdict.bodyVerified, bodyVerified);
     assert.equal(status.verdict.conformance, conformance);
-    if (body !== null) assert.equal(status.verdict.bodyVerified, body);
     const bar = a.statusBar();
     assert.ok(bar.visible);
     assert.ok(bar.text.includes(`KNOBE: ${state}, ${conformance}`), bar.text);
     assert.ok(bar.tooltip.includes(CAVEAT));
-    assert.ok(bar.tooltip.includes(`Body verified: ${status.verdict.bodyVerified}`));
-    for (const line of bar.tooltip.split("\n")) assert.ok(!UNSAFE.test(line), JSON.stringify(line));
+    assert.ok(bar.tooltip.includes(`Body verified: ${bodyVerified}`));
+    for (const line of bar.tooltip.split("\n")) {
+      assert.ok(!UNSAFE.test(line) && line.isWellFormed(), JSON.stringify(line));
+    }
   });
 }
 
@@ -97,6 +81,18 @@ test("control-character-title: escaped in tooltip and details document", async (
     && text.includes("Conformance: valid"));
   for (const line of text.split("\n")) assert.ok(!UNSAFE.test(line), JSON.stringify(line));
   assert.ok(!/^status:/m.test(text));
+  await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
+});
+
+test("bidi-title: the right-to-left override is escaped in the details document", async () => {
+  await open("vectors/adversarial/bidi-title.knobe.md");
+  await vscode.commands.executeCommand("knobeVerify.showDetails");
+  const isDetails = (d) => d.uri.scheme === "knobe-verify" && d.getText().includes("bidi-title");
+  await waitFor(() => vscode.workspace.textDocuments.some(isDetails));
+  const text = vscode.workspace.textDocuments.find(isDetails).getText();
+  assert.ok(text.includes("Integrity: failed"));
+  assert.ok(text.includes("Title (from payload, untrusted): ok" + "\\" + "u202egnikcol\n"));
+  for (const line of text.split("\n")) assert.ok(!UNSAFE.test(line) && line.isWellFormed(), JSON.stringify(line));
   await vscode.commands.executeCommand("workbench.action.closeActiveEditor");
 });
 
