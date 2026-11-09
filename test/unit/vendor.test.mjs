@@ -6,7 +6,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const PINNED = "689720ddf156b864b7d09d35017176d6b6b8642f2be92a84ab98f9aebc670659";
+const PINNED = "6d83ffa6aead57ce0dde61f410475c0e70707ea6740abff47a9e32df86ea1a41";
 
 test("vendored knobe-core.js is byte-identical to the pinned upstream file", () => {
   const bytes = readFileSync(join(root, "vendor", "knobe-core.js"));
@@ -14,6 +14,21 @@ test("vendored knobe-core.js is byte-identical to the pinned upstream file", () 
   assert.ok(bytes.toString("utf8").startsWith("/**\n * knobe-core.js — KNOBE Protocol v1 engine"));
   assert.ok(readFileSync(join(root, "vendor", "VENDORED.md"), "utf8").includes(PINNED));
 });
+
+// Drift guard, opt-in: with KNOBE_PROTOCOL_DIR set to a checkout of the
+// upstream commit named in VENDORED.md, the engine and every bundled vector
+// file (READMEs included) must match it byte for byte.
+const UPSTREAM = process.env.KNOBE_PROTOCOL_DIR;
+test("engine and bundled vectors match the upstream checkout in KNOBE_PROTOCOL_DIR",
+  { skip: UPSTREAM ? false : "KNOBE_PROTOCOL_DIR is not set" }, () => {
+    const ours = join(root, "test", "fixtures", "vectors");
+    const theirs = join(UPSTREAM, "test-vectors");
+    const rel = (base) => walk(base).map((p) => p.slice(base.length + 1)).sort();
+    assert.ok(readFileSync(join(root, "vendor", "knobe-core.js")).equals(readFileSync(join(UPSTREAM, "knobe-core.js"))));
+    assert.deepEqual(rel(ours), rel(theirs));
+    const drifted = rel(ours).filter((f) => !readFileSync(join(ours, f)).equals(readFileSync(join(theirs, f))));
+    assert.deepEqual(drifted, []);
+  });
 
 test("Apache-2.0 license text ships next to the engine", () => {
   const lic = readFileSync(join(root, "vendor", "LICENSE-knobe-core.txt"), "utf8");

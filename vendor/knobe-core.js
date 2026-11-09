@@ -118,28 +118,41 @@ function isDict(x) {
 /**
  * Render a (possibly payload-derived) value safely for display: escape
  * C0/C1 control characters and DEL so a crafted string cannot spoof a
- * report or inject ANSI/HTML control sequences. Port of lens.py safe().
+ * report or inject ANSI/HTML control sequences, bidi controls that reorder
+ * text, and unpaired surrogates, which have no UTF-8 form. Port of lens.py
+ * safe(); the limit counts code points, as Python's len() does, and a null
+ * limit keeps the whole text, as None does there.
  */
 export function safe(value, limit = 300) {
+  if (typeof value === "bigint") return value.toString();   // as Python's repr() of an int
   if (typeof value !== "string") {
-    // approximate Python repr() for non-strings — display-only
-    try { return JSON.stringify(value) ?? String(value); } catch { return String(value); }
+    // approximate Python repr() for non-strings — display-only. Never throws:
+    // a BigInt inside an object is written as a string, and an object the
+    // parser built has no prototype, so String() of it would throw.
+    try {
+      return JSON.stringify(value, (k, v) => (typeof v === "bigint" ? v.toString() : v)) ?? String(value);
+    } catch {
+      return Object.prototype.toString.call(value);
+    }
   }
   let out = "";
   for (const ch of value) {
     const o = ch.codePointAt(0);
     if (o < 0x20 || o === 0x7f || (o >= 0x80 && o <= 0x9f)) {
       out += "\\x" + o.toString(16).padStart(2, "0");
-    } else if ((o >= 0x202a && o <= 0x202e) || (o >= 0x2066 && o <= 0x2069) || o === 0x2028 || o === 0x2029) {
+    } else if ((o >= 0x202a && o <= 0x202e) || (o >= 0x2066 && o <= 0x2069) || o === 0x2028 || o === 0x2029
+               || (o >= 0xd800 && o <= 0xdfff)) {
       // Trojan-Source bidi controls (LRE/RLE/PDF/LRO/RLO, isolates) + line/para
       // separators — used to visually reorder displayed text. Escape for display;
-      // legitimate RTL letters (not format controls) are left untouched.
+      // legitimate RTL letters (not format controls) are left untouched. An
+      // unpaired surrogate (from a \uD800 escape) is shown as \udXXX.
       out += "\\u" + o.toString(16).padStart(4, "0");
     } else {
       out += ch;
     }
   }
-  if (out.length > limit) out = out.slice(0, limit) + "…";
+  const points = Array.from(out);
+  if (limit != null && points.length > limit) out = points.slice(0, limit).join("") + "…";
   return out;
 }
 
@@ -160,8 +173,7 @@ function cpCompare(a, b) {
 
 /** True if any string (key or value) in the structure is not well-formed
  * UTF-16 (contains a lone surrogate). Such strings cannot be UTF-8
- * canonicalized. (lens.py, given the same input via a \uD800 escape,
- * crashes at canon.encode(); we reject cleanly instead — see NOTES.md.) */
+ * canonicalized; lens.py rejects them with the same reason. */
 function hasIllFormed(x) {
   if (typeof x === "string") {
     if (typeof x.isWellFormed === "function") return !x.isWellFormed();
@@ -307,7 +319,10 @@ export function parseJSONStrict(text) {
       // Beyond 2^53, Number loses precision; BigInt keeps Python-int parity.
       return Number.isSafeInteger(n) ? n : BigInt(lexeme);
     }
-    return new KFloat(Number(lexeme));   // preserve float-ness for canon parity
+    const n = Number(lexeme);
+    // An overflowing lexeme (e.g. 1e400) has no canonical form: reject it like NaN.
+    if (!Number.isFinite(n)) fail("number out of range");
+    return new KFloat(n);   // preserve float-ness for canon parity
   }
 
   const v = parseValue();
@@ -489,7 +504,7 @@ function findBodyStart(pre) {
 // ---------------------------------------------------------------------------
 
 function b64decodeStrict(s) {
-  const clean = s.replace(/\s+/gu, ""); // Python: "".join(block.split())
+  const clean = s.replace(/[ \t\r\n]+/g, ""); // ASCII whitespace only (ERRATA)
   if (clean.length % 4 !== 0) throw new Error("invalid base64 length");
   if (!/^[A-Za-z0-9+/]*={0,2}$/.test(clean)) throw new Error("invalid base64 alphabet");
   const bin = atob(clean);
@@ -725,7 +740,8 @@ export async function verify(input) {
 
   // Lone UTF-16 surrogates cannot be UTF-8 canonicalized — reject cleanly.
   if (hasIllFormed(payload)) {
-    return unreadableReport("payload could not be decoded or parsed", blocks);
+    return unreadableReport("payload contains characters that cannot be UTF-8 "
+      + "encoded (e.g. an unpaired surrogate); rejected", blocks);
   }
 
   // P0-4: NFC key collisions make canonicalization ambiguous -> reject
@@ -747,7 +763,8 @@ export async function verify(input) {
   }
 
   // --- canonical hash (spec §5) — FROZEN ---
-  const stored = payload.payload_hash ?? "";
+  // lens.py: payload.get("payload_hash", "") — a null value stays null.
+  const stored = "payload_hash" in payload ? payload.payload_hash : "";
   const computed = await computePayloadHash(payload);
 
   // --- required-field presence ---
@@ -838,13 +855,29 @@ export async function read(input) {
 // Crystallizer: seal / create / transform
 // ---------------------------------------------------------------------------
 
+/** Refuse a string containing a code point unassigned in this engine's
+ * Unicode tables. NFC of such a string can change in a later Unicode version,
+ * so its payload hash could differ between verifiers (issue #33). */
+const UNASSIGNED = /\p{Cn}/u;
+function assertAssigned(s) {
+  const m = UNASSIGNED.exec(s);
+  if (m) {
+    const cp = m[0].codePointAt(0).toString(16).toUpperCase().padStart(4, "0");
+    throw new Error(`the text contains U+${cp}, a character this software's Unicode version ` +
+      "does not recognize, so verifiers could disagree about its seal. Remove it, or use " +
+      "newer software (for Studio, an up-to-date browser).");
+  }
+  return s;
+}
+
 /** Recursively NFC-normalize keys and string values, coerce bare numbers to
  * strings (spec §5 requires string numerics), and drop undefined values.
+ * Refuses unassigned code points (see assertAssigned).
  * Used at authoring intake so created payloads are canonical at rest. */
 function normalizePayloadForAuthoring(x) {
   if (x === null) return null;
   switch (typeof x) {
-    case "string": return nfc(x);
+    case "string": return nfc(assertAssigned(x));
     case "boolean": return x;
     case "number": return pyNumberRepr(x);   // §5: numerics as strings
     case "bigint": return x.toString();
@@ -856,7 +889,7 @@ function normalizePayloadForAuthoring(x) {
   const out = {};
   for (const k of Object.keys(x)) {
     const v = normalizePayloadForAuthoring(x[k]);
-    if (v !== undefined) out[nfc(k)] = v;
+    if (v !== undefined) out[nfc(assertAssigned(k))] = v;
   }
   return out;
 }

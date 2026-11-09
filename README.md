@@ -19,7 +19,7 @@ This is an independent editor integration by Joshua Hori. It is not the KNOBE Pr
   - The details view also shows the stored and computed `payload_hash`, the number of payload blocks, and any missing required fields.
 - Clears the verdict as soon as the buffer has unsaved edits. The status bar then reads `KNOBE: unsaved edits, no verdict` until you save (or undo back to the saved text). A verdict describes the saved file, so it is never left showing over a modified buffer.
 - Shows a notification when the active file's result is `failed` or `unreadable`, or verification could not run, so the result reaches people who are not watching the status bar. Each distinct result is announced once. See `knobeVerify.announceProblems`.
-- Escapes control characters, DEL, C1 controls, and bidirectional formatting characters in every payload-derived string it displays, so a crafted title cannot spoof the report.
+- Escapes control characters, DEL, C1 controls, bidirectional overrides and isolates, line and paragraph separators, and unpaired surrogates in every payload-derived string it displays, so a crafted title cannot spoof or reorder the report.
 
 ## What it does not do
 
@@ -73,13 +73,15 @@ What has been tested: automated tests check the label wording, the escaping, and
 
 ## Test-vector results
 
-All 25 published KNOBE Protocol v1 test vectors (the nine core vectors, the ten adversarial vectors, and the six interpretation vectors) produce the expected integrity state, body result, and conformance level, both in unit tests against the engine wrapper and in integration tests that open each file in a real VS Code instance. These results come from the vendored engine; this extension adds no verification logic of its own.
+All 33 KNOBE Protocol v1 test vectors published at upstream commit `8d664d3` (the nine core vectors, the seventeen adversarial vectors, and the seven interpretation vectors) produce the expected integrity state, body result, and conformance level, both in unit tests against the engine wrapper and in integration tests that open each file in a real VS Code instance. The expected results are read from the tables in the READMEs published with the vectors, and the tests fail if a vector has no row there. These results come from the vendored engine; this extension adds no verification logic of its own.
 
 | Set | Vectors | Result |
 |---|---|---|
 | Core (`test-vectors/`) | 9 | 9 match |
-| Adversarial (`test-vectors/adversarial/`) | 10 | 10 match, no crashes; `control-character-title` shows `verified` with every displayed payload string escaped |
-| Interpretation (`test-vectors/interpretation/`) | 6 | 6 match |
+| Adversarial (`test-vectors/adversarial/`) | 17 | 17 match, no crashes; `control-character-title` and `bidi-title` show every payload string escaped |
+| Interpretation (`test-vectors/interpretation/`) | 7 | 7 match |
+
+For every vector, the tests also check that nothing the extension shows (status bar, accessible label, tooltip, notification, details view) contains a control character, bidi override or isolate, line or paragraph separator, or unpaired surrogate.
 
 The integration suite also passes with networking disabled (an empty network namespace), which is how the offline requirement is checked.
 
