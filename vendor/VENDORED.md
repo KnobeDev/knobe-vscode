@@ -22,7 +22,8 @@ To update, with `UP` a checkout of the new upstream commit:
 
 1. Copy `$UP/knobe-core.js` here, and replace `test/fixtures/vectors/` with
    a copy of `$UP/test-vectors/`.
-2. Update the commit and hash here and in `vendor.test.mjs`.
+2. Update the commit and hash here and in `vendor.test.mjs`, and the
+   per-set vector counts in `vectors.test.mjs` and `README.md`.
 3. Run `KNOBE_PROTOCOL_DIR=$UP npm test`. With that variable set, the unit
    tests also check that the engine and every vector file match `$UP` byte
    for byte.

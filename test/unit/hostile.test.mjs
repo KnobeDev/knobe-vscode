@@ -44,14 +44,43 @@ async function verdictOf(text) {
 }
 const details = (v) => P.detailsText("hostile.knobe.md", { kind: "verified", verdict: v, source: "disk", checkedAt: new Date(0) });
 
-test("a payload with an overflowing number is unreadable, not an error (upstream PR #11)", async () => {
-  const v = await verdictOf(rewritePayload(SEALED, (j) => j.replace('"summary":""', '"summary":1e400')));
-  assert.equal(v.state, "unreadable");
+// The engine gives this one reason for any payload it cannot decode or parse,
+// so each test below also runs a control that differs only in the character
+// under test, to show the rewrite itself leaves a readable file.
+const DECODE_FAILED = /could not be decoded or parsed/;
+
+/** SEALED with its empty summary replaced by the number literal `num`. */
+const withSummary = (num) => rewritePayload(SEALED, (j) => {
+  assert.ok(j.includes('"summary":""'), j);
+  return j.replace('"summary":""', `"summary":${num}`);
 });
 
-test("a no-break space in a payload block is not stripped (ERRATA E12)", async () => {
-  const v = await verdictOf(SEALED.replace(/(-----BEGIN KNOBE B64-----\n.{10})/, "$1" + cp(0xa0)));
+/** SEALED with `ch` inserted ten characters into its payload block. */
+const withBlockChar = (ch) => {
+  const out = SEALED.replace(/(-----BEGIN KNOBE B64-----\n.{10})/, "$1" + ch);
+  assert.notEqual(out, SEALED, "the insertion point was not found");
+  return out;
+};
+
+test("a payload with an overflowing number is unreadable, not an error (upstream PR #11)", async () => {
+  // Control: a finite number in the same place is read, and fails the hash.
+  assert.equal((await verdictOf(withSummary("1e300"))).state, "failed");
+  const v = await verdictOf(withSummary("1e400"));
   assert.equal(v.state, "unreadable");
+  assert.match(v.reason, DECODE_FAILED);
+});
+
+test("only ASCII whitespace is stripped from a payload block (ERRATA E12)", async () => {
+  // Controls: an ASCII space or tab in the same place is stripped and the file verifies.
+  for (const ch of [" ", cp(0x09)]) {
+    assert.equal((await verdictOf(withBlockChar(ch))).state, "verified", `U+${ch.codePointAt(0).toString(16)}`);
+  }
+  // A no-break space or NEXT LINE is not whitespace there, so the Base64 is invalid.
+  for (const ch of [cp(0xa0), cp(0x85)]) {
+    const v = await verdictOf(withBlockChar(ch));
+    assert.equal(v.state, "unreadable", `U+${ch.codePointAt(0).toString(16)}`);
+    assert.match(v.reason, DECODE_FAILED);
+  }
 });
 
 for (const [label, json, shown] of [

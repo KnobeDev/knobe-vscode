@@ -24,8 +24,10 @@ const firstWord = (cell) => cell.split(/[\s(]/)[0];
  * Rows of one set's README. Rows are read by column position, so each must
  * sit under a header whose columns were checked first: a renamed, missing or
  * reordered column throws here instead of comparing the wrong values.
- * An em dash in body_verified is spec section 7's mandated "omitted" for an
- * unreadable file (ERRATA E11), which is how this extension shows it.
+ * An em dash in body_verified is read as "omitted" only on an unreadable
+ * row, where it is spec section 7's mandated "omitted" (ERRATA E11), which is
+ * how this extension shows it. On any other row it could mean "not stated",
+ * so it is an unrecognized result there.
  */
 function readmeRows(set) {
   const readme = path.join(set, "README.md");
@@ -47,7 +49,7 @@ function readmeRows(set) {
     if (!file) continue; // the |---| separator row
     if (!underHeader) throw new Error(`${readme}: ${file} is not under a recognized header`);
     const [state, body, conformance] = cells.slice(1, 4).map(firstWord);
-    const bodyVerified = body === EM_DASH ? "omitted" : body;
+    const bodyVerified = body === EM_DASH && state === "unreadable" ? "omitted" : body;
     if (!STATES.includes(state) || !BODIES.includes(bodyVerified) || !LEVELS.includes(conformance)) {
       throw new Error(`${readme}: ${file} has an unrecognized result: ${state} / ${body} / ${conformance}`);
     }

@@ -17,10 +17,14 @@ test("every bundled vector has exactly one README row, and every row a file", ()
   assert.deepEqual(ROWS.map((r) => r.file).sort(), bundledVectors());
 });
 
-test("the core set is the nine conformance vectors; all 33 published at 8d664d3 are covered", () => {
-  assert.equal(ROWS.filter((r) => r.set === "").length, 9);
-  for (const set of SETS.filter(Boolean)) assert.ok(ROWS.some((r) => r.set === set), set);
-  assert.ok(ROWS.length >= 33, `only ${ROWS.length} vectors`);
+// Vectors per set at the upstream commit in vendor/VENDORED.md. The
+// extension's README.md gives the same counts in prose, which this test does
+// not read: update both when re-vendoring.
+const PUBLISHED = { "": 9, adversarial: 17, interpretation: 7 };
+
+test("the sets hold 9 core, 17 adversarial and 7 interpretation vectors", () => {
+  const counts = Object.fromEntries(SETS.map((set) => [set, ROWS.filter((r) => r.set === set).length]));
+  assert.deepEqual(counts, PUBLISHED);
 });
 
 async function verdictOf(file) {
