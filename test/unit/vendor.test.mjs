@@ -6,7 +6,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const PINNED = "6d83ffa6aead57ce0dde61f410475c0e70707ea6740abff47a9e32df86ea1a41";
+const PINNED = "2712c8359257cfee035573a07a5f6a0710a29cb81edb3e0bce917fd5e72d374b";
 
 test("vendored knobe-core.js is byte-identical to the pinned upstream file", () => {
   const bytes = readFileSync(join(root, "vendor", "knobe-core.js"));

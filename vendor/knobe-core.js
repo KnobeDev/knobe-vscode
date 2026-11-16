@@ -177,7 +177,11 @@ function cpCompare(a, b) {
 function hasIllFormed(x) {
   if (typeof x === "string") {
     if (typeof x.isWellFormed === "function") return !x.isWellFormed();
-    return /(?:[\uD800-\uDBFF](?![\uDC00-\uDFFF]))|(?:(?<![\uD800-\uDBFF])[\uDC00-\uDFFF])/.test(x);
+    // No lookbehind: Safari on iOS before 16.4 cannot parse one, and a regex
+    // literal it cannot parse stops this whole file from loading. A low
+    // surrogate is unpaired when it starts the string or follows a code unit
+    // that is not a high surrogate.
+    return /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?:^|[^\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(x);
   }
   if (Array.isArray(x)) return x.some(hasIllFormed);
   if (isDict(x)) {
