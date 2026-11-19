@@ -1,0 +1,42 @@
+# Parity gate: compiles the extension and runs the unit tests, including the
+# drift guard in test/unit/vendor.test.mjs, against the CURRENT upstream
+# protocol (main). The drift guard fails as soon as upstream's knobe-core.js
+# or published vectors differ from the copies bundled here, which is the
+# signal to copy the released engine and vectors byte for byte. A weekly run
+# catches upstream changes between pushes.
+#
+# The integration tests (test/integration/) need a VS Code instance and stay
+# a local check: npm run test:integration.
+name: parity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "41 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: KnobeOne/knobe-protocol
+          path: knobe-protocol
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit
+        env:
+          KNOBE_PROTOCOL_DIR: ${{ github.workspace }}/knobe-protocol
