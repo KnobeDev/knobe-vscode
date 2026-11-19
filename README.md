@@ -6,7 +6,7 @@ Read-only, offline verification of `.knobe.md` files, built on KNOBE.
 
 When you open or save a file named `*.knobe.md`, this extension checks it locally and shows the verdict in the status bar. A `verified` result means the sealed payload is byte-identical to what was sealed. It does **not** mean the content is accurate, the attribution is honest, or the file is safe to rely on.
 
-This is an independent editor integration by Joshua Hori. It is not the KNOBE Protocol steward's official or reference implementation, and the steward did not build, endorse, or review it.
+KNOBE Verify for VS Code is maintained by Joshua Hori (KnobeDev). It does not count toward the two-independent-implementations trigger in the protocol's [GOVERNANCE.md](https://github.com/KnobeOne/knobe-protocol/blob/main/GOVERNANCE.md#transition-to-shared-governance). It is not an official or reference KNOBE implementation, and the KNOBE steward did not build, review or endorse it.
 
 ## What it does
 
