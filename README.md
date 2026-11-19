@@ -73,7 +73,7 @@ What has been tested: automated tests check the label wording, the escaping, and
 
 ## Test-vector results
 
-All 33 KNOBE Protocol v1 test vectors published at upstream commit `8d664d3` (the nine core vectors, the seventeen adversarial vectors, and the seven interpretation vectors) produce the expected integrity state, body result, and conformance level, both in unit tests against the engine wrapper and in integration tests that open each file in a real VS Code instance. The expected results are read from the tables in the READMEs published with the vectors, and the tests fail if a vector has no row there. These results come from the vendored engine; this extension adds no verification logic of its own.
+All 33 KNOBE Protocol v1 test vectors published at upstream commit `4f66885` (the nine core vectors, the seventeen adversarial vectors, and the seven interpretation vectors) produce the expected integrity state, body result, and conformance level, both in unit tests against the engine wrapper and in integration tests that open each file in a real VS Code instance. The expected results are read from the tables in the READMEs published with the vectors, and the tests fail if a vector has no row there. These results come from the vendored engine; this extension adds no verification logic of its own.
 
 | Set | Vectors | Result |
 |---|---|---|

@@ -8,9 +8,9 @@ ES module for Node; it does not alter the engine.
 
 | | |
 |---|---|
-| Source | https://github.com/KnobeOne/knobe-protocol/blob/8d664d37211388e0bdaab08fced2546be8bb9f64/knobe-core.js |
-| Upstream commit | `8d664d37211388e0bdaab08fced2546be8bb9f64` |
-| SHA-256 | `6d83ffa6aead57ce0dde61f410475c0e70707ea6740abff47a9e32df86ea1a41` |
+| Source | https://github.com/KnobeOne/knobe-protocol/blob/4f6688595b1a8021dca3128626461d50fea58d2f/knobe-core.js |
+| Upstream commit | `4f6688595b1a8021dca3128626461d50fea58d2f` |
+| SHA-256 | `2712c8359257cfee035573a07a5f6a0710a29cb81edb3e0bce917fd5e72d374b` |
 | License | Apache-2.0, full text in `LICENSE-knobe-core.txt` |
 
 `test/unit/vendor.test.mjs` fails if the file's hash drifts from the value
